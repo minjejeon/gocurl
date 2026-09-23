@@ -15,6 +15,7 @@ adheres to [Semantic Versioning][semver].
 
 - Support for `--data-urlencode` command-line argument.
 - Support for multiple `-d`/`--data` arguments, concatenated with `&`.
+- Support for multiple URLs and `--url` options requested sequentially.
 - AIX (`aix/ppc64`) build support.
 
 [unreleased]: https://github.com/ameshkov/gocurl/compare/v1.6.0...HEAD

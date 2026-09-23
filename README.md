@@ -384,7 +384,7 @@ Usage:
 
 Application Options:
       --url=<URL>                                           URL the request will be made to. Can be specified without
-                                                            any flags.
+                                                            any flags and multiple times.
   -X, --request=<method>                                    HTTP method. GET by default.
   -d, --data=<data>                                         Sends the specified data to the HTTP server using content
                                                             type application/x-www-form-urlencoded. Can be specified

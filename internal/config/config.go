@@ -19,7 +19,11 @@ import (
 // created from Options (command-line arguments).
 type Config struct {
 	// RequestURL is the URL where the target request will be sent.
+	// For backwards compatibility, it matches RequestURLs[0].
 	RequestURL *url.URL
+
+	// RequestURLs is the list of target URLs for the request.
+	RequestURLs []*url.URL
 
 	// Method is the HTTP method of the request.
 	Method string
@@ -202,14 +206,18 @@ func ParseConfig(args []string) (cfg *Config, err error) {
 		RawOptions:     opts,
 	}
 
-	cfg.RequestURL, err = url.Parse(opts.URL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid URL specified %s: %w", opts.URL, err)
+	for _, rawURL := range opts.URL {
+		var u *url.URL
+		u, err = parseRequestURL(rawURL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid URL specified %s: %w", rawURL, err)
+		}
+
+		cfg.RequestURLs = append(cfg.RequestURLs, u)
 	}
 
-	if cfg.RequestURL.Scheme == "" {
-		// Use http scheme by default.
-		cfg.RequestURL.Scheme = "http"
+	if len(cfg.RequestURLs) > 0 {
+		cfg.RequestURL = cfg.RequestURLs[0]
 	}
 
 	if opts.ProxyURL != "" {
@@ -497,4 +505,14 @@ func parseExperiments(exps []string) (expMap map[Experiment]string, err error) {
 	}
 
 	return expMap, nil
+}
+
+// parseRequestURL parses the given raw URL string. If no scheme is specified,
+// it defaults to "http://", properly setting Scheme, Host, and Path.
+func parseRequestURL(rawURL string) (u *url.URL, err error) {
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "http://" + rawURL
+	}
+
+	return url.Parse(rawURL)
 }

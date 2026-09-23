@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/ameshkov/gocurl/internal/appversion"
@@ -55,6 +56,29 @@ func Main() {
 func Run(cfg *config.Config, out *output.Output) error {
 	out.Debug("Starting gocurl %s with arguments:\n%s", appversion.Version(), cfg.RawOptions)
 
+	reqURLs := cfg.RequestURLs
+	if len(reqURLs) == 0 && cfg.RequestURL != nil {
+		reqURLs = []*url.URL{cfg.RequestURL}
+	}
+
+	var errs []error
+	for _, u := range reqURLs {
+		singleCfg := *cfg
+		singleCfg.RequestURL = u
+		if err := runSingle(&singleCfg, out); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+
+// runSingle executes the request for a single URL.
+func runSingle(cfg *config.Config, out *output.Output) error {
 	transport, err := client.NewTransport(cfg, out)
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP transport: %w", err)

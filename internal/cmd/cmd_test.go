@@ -147,6 +147,31 @@ func TestRunDataURLEncode(t *testing.T) {
 	assert.Contains(t, dataBuffer.String(), "normal=data&encoded=hello+world%26foo%3Dbar")
 }
 
+// TestRunMultipleURLs tests that multiple URLs are requested sequentially.
+func TestRunMultipleURLs(t *testing.T) {
+	handler := httpbin.New()
+	server := httptest.NewServer(handler.Handler())
+	defer server.Close()
+
+	dataBuffer := &bytes.Buffer{}
+	logBuffer := &bytes.Buffer{}
+
+	args := []string{
+		server.URL + "/get?first=1",
+		server.URL + "/get?second=2",
+	}
+	cfg, err := config.ParseConfig(args)
+	require.NoError(t, err)
+
+	out := output.NewOutputWithWriters(dataBuffer, logBuffer, cfg.Verbose, cfg.OutputJSON)
+	err = cmd.Run(cfg, out)
+	require.NoError(t, err)
+
+	outputStr := dataBuffer.String()
+	assert.Contains(t, outputStr, "get?first=1")
+	assert.Contains(t, outputStr, "get?second=2")
+}
+
 // TestRunWithHeaders tests a request with custom headers.
 func TestRunWithHeaders(t *testing.T) {
 	// Create httpbin test server

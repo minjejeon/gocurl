@@ -126,3 +126,43 @@ func TestParseConfig_Data_Errors(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestParseConfig_MultipleURLs(t *testing.T) {
+	t.Run("multiple_positional", func(t *testing.T) {
+		args := []string{"http://example.com/1", "http://example.com/2"}
+		cfg, err := config.ParseConfig(args)
+		require.NoError(t, err)
+		assert.Equal(t, "http://example.com/1", cfg.RequestURL.String())
+		require.Len(t, cfg.RequestURLs, 2)
+		assert.Equal(t, "http://example.com/1", cfg.RequestURLs[0].String())
+		assert.Equal(t, "http://example.com/2", cfg.RequestURLs[1].String())
+	})
+
+	t.Run("url_option_and_positional", func(t *testing.T) {
+		args := []string{"--url", "http://example.com/1", "http://example.com/2"}
+		cfg, err := config.ParseConfig(args)
+		require.NoError(t, err)
+		require.Len(t, cfg.RequestURLs, 2)
+		assert.Equal(t, "http://example.com/1", cfg.RequestURLs[0].String())
+		assert.Equal(t, "http://example.com/2", cfg.RequestURLs[1].String())
+	})
+
+	t.Run("multiple_url_options", func(t *testing.T) {
+		args := []string{"--url", "http://example.com/1", "--url", "http://example.com/2"}
+		cfg, err := config.ParseConfig(args)
+		require.NoError(t, err)
+		require.Len(t, cfg.RequestURLs, 2)
+		assert.Equal(t, "http://example.com/1", cfg.RequestURLs[0].String())
+		assert.Equal(t, "http://example.com/2", cfg.RequestURLs[1].String())
+	})
+}
+
+func TestParseConfig_URLWithoutScheme(t *testing.T) {
+	args := []string{"example.com/test"}
+	cfg, err := config.ParseConfig(args)
+	require.NoError(t, err)
+	assert.Equal(t, "http", cfg.RequestURL.Scheme)
+	assert.Equal(t, "example.com", cfg.RequestURL.Host)
+	assert.Equal(t, "example.com", cfg.RequestURL.Hostname())
+	assert.Equal(t, "/test", cfg.RequestURL.Path)
+}

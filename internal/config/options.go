@@ -3,15 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	goFlags "github.com/jessevdk/go-flags"
 )
 
 // Options represents command-line arguments.
 type Options struct {
-	// URL represents the address the request will be made to. It is always the
-	// last argument.
-	URL string `long:"url" description:"URL the request will be made to. Can be specified without any flags." value-name:"<URL>"`
+	// URL represents the address the request will be made to. Can be specified
+	// without any flags and multiple times.
+	URL []string `long:"url" description:"URL the request will be made to. Can be specified without any flags and multiple times." value-name:"<URL>"`
 
 	// Method is the HTTP method to be used.
 	Method string `short:"X" long:"request" description:"HTTP method. GET by default." value-name:"<method>"`
@@ -151,13 +152,49 @@ func parseOptions(args []string) (o *Options, err error) {
 		return nil, err
 	}
 
-	if len(remainingArgs) != 1 && opts.URL == "" {
+	opts.URL = collectURLs(args, opts.URL, remainingArgs)
+	if len(opts.URL) == 0 {
 		return nil, fmt.Errorf("URL not found in the arguments: %v", args)
 	}
 
-	if opts.URL == "" {
-		opts.URL = remainingArgs[0]
+	return opts, nil
+}
+
+// collectURLs collects URLs specified via --url and positional arguments,
+// preserving their order from command-line arguments.
+func collectURLs(args []string, urlFlags []string, remainingArgs []string) (urls []string) {
+	remMap := make(map[string]int, len(remainingArgs))
+	for _, arg := range remainingArgs {
+		remMap[arg]++
 	}
 
-	return opts, nil
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--" {
+			for j := i + 1; j < len(args); j++ {
+				urls = append(urls, args[j])
+			}
+
+			return urls
+		}
+
+		if arg == "--url" {
+			if i+1 < len(args) {
+				urls = append(urls, args[i+1])
+				i++
+			}
+		} else if strings.HasPrefix(arg, "--url=") {
+			urls = append(urls, strings.TrimPrefix(arg, "--url="))
+		} else if remMap[arg] > 0 {
+			urls = append(urls, arg)
+			remMap[arg]--
+		}
+	}
+
+	if len(urls) == 0 {
+		urls = append(urls, urlFlags...)
+		urls = append(urls, remainingArgs...)
+	}
+
+	return urls
 }
