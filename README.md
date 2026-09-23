@@ -387,7 +387,10 @@ Application Options:
                                                             any flags.
   -X, --request=<method>                                    HTTP method. GET by default.
   -d, --data=<data>                                         Sends the specified data to the HTTP server using content
-                                                            type application/x-www-form-urlencoded.
+                                                            type application/x-www-form-urlencoded. Can be specified
+                                                            multiple times.
+      --data-urlencode=<data>                               HTTP POST data to be URL-encoded before sending. Can be
+                                                            specified multiple times.
   -H, --header=                                             Extra header to include in the request. Can be specified
                                                             multiple times.
   -x, --proxy=[protocol://username:password@]host[:port]    Use the specified proxy. The proxy string can be specified

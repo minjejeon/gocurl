@@ -99,6 +99,54 @@ func TestRunBasicPOST(t *testing.T) {
 	assert.Contains(t, data, testData)
 }
 
+// TestRunMultipleData tests that multiple -d arguments are joined with '&'.
+func TestRunMultipleData(t *testing.T) {
+	handler := httpbin.New()
+	server := httptest.NewServer(handler.Handler())
+	defer server.Close()
+
+	dataBuffer := &bytes.Buffer{}
+	logBuffer := &bytes.Buffer{}
+
+	args := []string{
+		"-d", "key1=value1",
+		"-d", "key2=value2",
+		server.URL + "/post",
+	}
+	cfg, err := config.ParseConfig(args)
+	require.NoError(t, err)
+
+	out := output.NewOutputWithWriters(dataBuffer, logBuffer, cfg.Verbose, cfg.OutputJSON)
+	err = cmd.Run(cfg, out)
+	require.NoError(t, err)
+
+	assert.Contains(t, dataBuffer.String(), "key1=value1&key2=value2")
+}
+
+// TestRunDataURLEncode tests that --data-urlencode encodes data and joins with '&'.
+func TestRunDataURLEncode(t *testing.T) {
+	handler := httpbin.New()
+	server := httptest.NewServer(handler.Handler())
+	defer server.Close()
+
+	dataBuffer := &bytes.Buffer{}
+	logBuffer := &bytes.Buffer{}
+
+	args := []string{
+		"-d", "normal=data",
+		"--data-urlencode", "encoded=hello world&foo=bar",
+		server.URL + "/post",
+	}
+	cfg, err := config.ParseConfig(args)
+	require.NoError(t, err)
+
+	out := output.NewOutputWithWriters(dataBuffer, logBuffer, cfg.Verbose, cfg.OutputJSON)
+	err = cmd.Run(cfg, out)
+	require.NoError(t, err)
+
+	assert.Contains(t, dataBuffer.String(), "normal=data&encoded=hello+world%26foo%3Dbar")
+}
+
 // TestRunWithHeaders tests a request with custom headers.
 func TestRunWithHeaders(t *testing.T) {
 	// Create httpbin test server

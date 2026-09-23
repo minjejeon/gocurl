@@ -177,11 +177,16 @@ func ParseConfig(args []string) (cfg *Config, err error) {
 		return nil, err
 	}
 
+	data, err := processData(args, opts)
+	if err != nil {
+		return nil, err
+	}
+
 	cfg = &Config{
 		Method:         opts.Method,
 		Head:           opts.Head,
 		Insecure:       opts.Insecure,
-		Data:           opts.Data,
+		Data:           data,
 		OutputJSON:     opts.OutputJSON,
 		OutputPath:     opts.OutputPath,
 		ConnectTimeout: opts.ConnectTimeout,

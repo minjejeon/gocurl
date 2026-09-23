@@ -16,8 +16,13 @@ type Options struct {
 	// Method is the HTTP method to be used.
 	Method string `short:"X" long:"request" description:"HTTP method. GET by default." value-name:"<method>"`
 
-	// Data specifies the data to be sent to the HTTP server.
-	Data string `short:"d" long:"data" description:"Sends the specified data to the HTTP server using content type application/x-www-form-urlencoded." value-name:"<data>"`
+	// Data specifies the data to be sent to the HTTP server.  Can be specified
+	// multiple times.
+	Data []string `short:"d" long:"data" description:"Sends the specified data to the HTTP server using content type application/x-www-form-urlencoded. Can be specified multiple times." value-name:"<data>"`
+
+	// DataURLEncode specifies the data to be sent to the HTTP server after
+	// URL-encoding.  Can be specified multiple times.
+	DataURLEncode []string `long:"data-urlencode" description:"HTTP POST data to be URL-encoded before sending. Can be specified multiple times." value-name:"<data>"`
 
 	// Headers is an array of HTTP headers (format is "header: value") to
 	// include in the request.
