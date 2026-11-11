@@ -33,7 +33,7 @@ lint:
 test:
 	go test -race -v -bench=. ./...
 
-# check runs linters and tests, it mirrors the CI quality gate.
+# check runs linters and tests, it is the quality gate.
 check: lint test
 
 # init installs the git pre-commit hook, see .githooks/pre-commit.

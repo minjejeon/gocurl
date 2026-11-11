@@ -358,8 +358,7 @@ make init
    and blocks the commit if any are found. Note that documentation files (like
    `README.md`) are exempt from this check, since they may legitimately
    mention those markers.
-2. Runs `make check`, the same quality gate as CI, which runs linters and
-   tests.
+2. Runs `make check`, the quality gate, which runs linters and tests.
 
 The hook is stored in [`.githooks/pre-commit`](./.githooks/pre-commit) so you
 can review exactly what it does. Re-run `make init` to re-install it after

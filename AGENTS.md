@@ -10,15 +10,15 @@ no exported API or second module.
 - `make init` — installs the git pre-commit hook (it is NOT installed by
   default on clone). The hook blocks commits containing `FIXME` or `TODO!!` in
   staged non-doc files and then runs `make check`.
-- `make check` — the CI quality gate: `make lint` then `make test`. This is what
-  the pre-commit hook and CI run; mirror it before finishing work.
+- `make check` — the quality gate: `make lint` then `make test`. This is what
+  the pre-commit hook runs; mirror it before finishing work. There is no CI.
 - `make lint` — `npx markdownlint-cli .` (needs Node.js; config in
   `.markdownlint.json`) then `golangci-lint run`.
 - `make test` — `go test -race -v -bench=. ./...` (runs benchmarks too, slow).
   For a fast iteration loop use `go test ./internal/...` or
   `go test -run <TestName> ./internal/cmd`.
 - `make build` / `make release` — release requires `GOOS`, `GOARCH`, `VERSION`
-  env vars (see CI `build.yaml` for the full cross-compile matrix).
+  env vars, e.g. `GOOS=aix GOARCH=ppc64 VERSION=v1.7.0 make release`.
 - `golangci-lint run --fix` applies the configured formatters.
 
 ## Formatting (lint fails otherwise)
@@ -72,15 +72,14 @@ no exported API or second module.
   unset.
 - Version bumps are dedicated commits ("Bump version to vX.Y.Z") with a
   CHANGELOG.md entry (Keep a Changelog; update the `[Unreleased]` block).
-- Releasing = push a `v*` tag. CI builds the cross-OS archive matrix and uploads
-  it as a GitHub release, and builds/pushes a multi-arch Docker image (on tags
-  and `master`).
+- There is no CI: releases and Docker images are built manually with
+  `make release` and the `Dockerfile`.
 
 ## Guidelines
 
 - When bumping the Go version, update it in `go.mod` first (source of truth),
   then the `golang:...` image tag in `Dockerfile` and the version mention in the
-  intro of this file. CI workflows use `go-version: stable` and need no edit.
+  intro of this file.
 - `vendor/` contains a local patch required for the AIX build:
   `vendor/github.com/AdguardTeam/dnsproxy/upstream/dot_unix.go` has `aix` added
   to its `//go:build` line.  `go mod vendor` silently reverts it, so restore it
