@@ -11,14 +11,24 @@ adheres to [Semantic Versioning][semver].
 
 ## [Unreleased]
 
+[unreleased]: https://github.com/ameshkov/gocurl/compare/v1.7.0...HEAD
+
+## [1.7.0] - 2026-11-11
+
 ### Added
 
 - Support for `--data-urlencode` command-line argument.
 - Support for multiple `-d`/`--data` arguments, concatenated with `&`.
 - Support for multiple URLs and `--url` options requested sequentially.
 - AIX (`aix/ppc64`) build support.
+- Support for server authentication with `-u`/`--user` (Basic by default) and
+  NTLM authentication with `--ntlm`.
+- Support for NTLM proxy authentication with `--proxy-ntlm` and the
+  `-U`/`--proxy-user` command-line argument.
 
-[unreleased]: https://github.com/ameshkov/gocurl/compare/v1.6.0...HEAD
+[See changes][1.7.0changes].
+
+[1.7.0changes]: https://github.com/ameshkov/gocurl/compare/v1.6.0...v1.7.0
 
 ## [1.6.0] - 2026-08-08
 
