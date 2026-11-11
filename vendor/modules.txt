@@ -28,6 +28,10 @@ github.com/AdguardTeam/golibs/stringutil
 github.com/AdguardTeam/golibs/syncutil
 github.com/AdguardTeam/golibs/timeutil
 github.com/AdguardTeam/golibs/validate
+# github.com/Azure/go-ntlmssp v0.1.1
+## explicit; go 1.24
+github.com/Azure/go-ntlmssp
+github.com/Azure/go-ntlmssp/internal/md4
 # github.com/ameshkov/cfcrypto v0.0.0-20250313151213-d5c09f09fc76
 ## explicit; go 1.22.0
 github.com/ameshkov/cfcrypto/shims/boring

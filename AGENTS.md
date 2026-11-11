@@ -81,6 +81,13 @@ no exported API or second module.
 - When bumping the Go version, update it in `go.mod` first (source of truth),
   then the `golang:...` image tag in `Dockerfile` and the version mention in the
   intro of this file. CI workflows use `go-version: stable` and need no edit.
+- `vendor/` contains a local patch required for the AIX build:
+  `vendor/github.com/AdguardTeam/dnsproxy/upstream/dot_unix.go` has `aix` added
+  to its `//go:build` line.  `go mod vendor` silently reverts it, so restore it
+  (`git checkout` that file) after re-vendoring and verify with
+  `CGO_ENABLED=0 GOOS=aix GOARCH=ppc64 go build`.
+- Builds are pure Go (`CGO_ENABLED=0`).  `make test` uses `-race`, which needs
+  cgo and a C compiler; without one, run `go test ./...` instead.
 - Add new guidelines to this "Guidelines" section automatically whenever you are
   asked to add a guideline, or infer from the conversation that a correction
   deserves to be codified as one. Keep each guideline concise and actionable.

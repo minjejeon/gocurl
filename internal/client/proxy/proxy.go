@@ -23,20 +23,22 @@ type Dialer struct {
 // type check
 var _ dialer.Dialer = (*Dialer)(nil)
 
-// NewProxyDialer creates a new instance of *ProxyDialer.
+// NewProxyDialer creates a new instance of *ProxyDialer.  If ntlm is true,
+// NTLM authentication is used with HTTP(S) proxies instead of Basic.
 func NewProxyDialer(
 	proxyURL *url.URL,
+	ntlm bool,
 	forward dialer.Dialer,
 	out *output.Output,
 	connectTimeout time.Duration,
 ) (d *Dialer, err error) {
 	d = &Dialer{out: out, connectTimeout: connectTimeout}
-	d.proxyDialer, err = createProxyDialer(proxyURL, forward, connectTimeout)
+	d.proxyDialer, err = createProxyDialer(proxyURL, ntlm, forward, connectTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	out.Debug("Using proxy %s", proxyURL)
+	out.Debug("Using proxy %s", proxyURL.Redacted())
 
 	return d, nil
 }
@@ -54,13 +56,18 @@ func (d *Dialer) Dial(network, addr string) (conn net.Conn, err error) {
 }
 
 // createProxyDialer creates a proxy dialer from the specified URL.
-func createProxyDialer(proxyURL *url.URL, f proxy.Dialer, connectTimeout time.Duration) (d proxy.Dialer, err error) {
+func createProxyDialer(
+	proxyURL *url.URL,
+	ntlm bool,
+	f proxy.Dialer,
+	connectTimeout time.Duration,
+) (d proxy.Dialer, err error) {
 	connectTimeoutSecs := int(connectTimeout.Seconds())
 	switch proxyURL.Scheme {
 	case "socks5", "socks5h":
 		return createSOCKS5ProxyDialer(proxyURL, connectTimeoutSecs)
 	case "http", "https":
-		return createHTTPProxyDialer(proxyURL, f, connectTimeout)
+		return createHTTPProxyDialer(proxyURL, ntlm, f, connectTimeout)
 	default:
 		return proxy.FromURL(proxyURL, f)
 	}

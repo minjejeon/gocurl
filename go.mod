@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/AdguardTeam/dnsproxy v0.83.2
 	github.com/AdguardTeam/golibs v0.35.15
+	github.com/Azure/go-ntlmssp v0.1.1
 	github.com/ameshkov/cfcrypto v0.0.0-20250313151213-d5c09f09fc76
 	github.com/chris-wood/ohttp-go v0.0.0-20260205154755-776f22a178b8
 	github.com/gobwas/ws v1.4.0

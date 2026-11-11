@@ -4,13 +4,13 @@ github.com/AdguardTeam/dnsproxy v0.83.2 h1:a1QpTUkcwUP8MxL2Nu7OJX62h1SiJUwRsEbii
 github.com/AdguardTeam/dnsproxy v0.83.2/go.mod h1:O1K8Roc6lNhSB5ffBXx34Pw7/03b+HUNh6qIhR/ad2A=
 github.com/AdguardTeam/golibs v0.35.15 h1:KjksvvzlQqxdNvrz+O3FgMbZKZAQdcoCkgBz0mR7wFQ=
 github.com/AdguardTeam/golibs v0.35.15/go.mod h1:lScOIavWuRFL0vls26jKfQXaITP7OKO1qw75WYp5nYk=
+github.com/Azure/go-ntlmssp v0.1.1 h1:l+FM/EEMb0U9QZE7mKNEDw5Mu3mFiaa2GKOoTSsNDPw=
+github.com/Azure/go-ntlmssp v0.1.1/go.mod h1:NYqdhxd/8aAct/s4qSYZEerdPuH1liG2/X9DiVTbhpk=
 github.com/ameshkov/cfcrypto v0.0.0-20250313151213-d5c09f09fc76 h1:z6LMYOvLin9kodGuTS2oIvBubPXW9VrzQLBhNQs0gLY=
 github.com/ameshkov/cfcrypto v0.0.0-20250313151213-d5c09f09fc76/go.mod h1:LaqyOxSuly8sA4gL9o85zJSP6uEWvmS2ARG8lH+sEeE=
 github.com/ameshkov/dnsstamps v1.0.3 h1:Srzik+J9mivH1alRACTbys2xOxs0lRH9qnTA7Y1OYVo=
 github.com/ameshkov/dnsstamps v1.0.3/go.mod h1:Ii3eUu73dx4Vw5O4wjzmT5+lkCwovjzaEZZ4gKyIH5A=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
-github.com/chris-wood/ohttp-go v0.0.0-20230523152405-45fb0d05eb13 h1:6KPUTuaINL/GlEf3Fd08p/JVVoVRX4Mh4GtsAJUKv7o=
-github.com/chris-wood/ohttp-go v0.0.0-20230523152405-45fb0d05eb13/go.mod h1:P/sVWl8F9KHJ1esPj/g1A5h8vfA3Ps9n6JOMNf6TszU=
 github.com/chris-wood/ohttp-go v0.0.0-20260205154755-776f22a178b8 h1:M3jyHgFxzohWoxsZB1rTlfEN9qG8xMthhfBFP1kZtqo=
 github.com/chris-wood/ohttp-go v0.0.0-20260205154755-776f22a178b8/go.mod h1:P/sVWl8F9KHJ1esPj/g1A5h8vfA3Ps9n6JOMNf6TszU=
 github.com/cloudflare/circl v1.3.3-0.20230418220640-795540340d5c/go.mod h1:5XYMA4rFBvNIrhs50XuiBJ15vF2pZn4nnUKZrLbUZFA=
@@ -61,8 +61,6 @@ github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD
 github.com/txthinking/runnergroup v0.0.0-20210608031112-152c7c4432bf/go.mod h1:CLUSJbazqETbaR+i0YAhXBICV9TrKH93pziccMhmhpM=
 github.com/txthinking/runnergroup v0.0.0-20230325130830-408dc5853f86 h1:EX/lPhI7pMS0AOXCkKgdo/CCHOtTtTBvdjk7uUWeSYc=
 github.com/txthinking/runnergroup v0.0.0-20230325130830-408dc5853f86/go.mod h1:cldYm15/XHcGt7ndItnEWHwFZo7dinU+2QoyjfErhsI=
-github.com/txthinking/socks5 v0.0.0-20230325130024-4230056ae301 h1:d/Wr/Vl/wiJHc3AHYbYs5I3PucJvRuw3SvbmlIRf+oM=
-github.com/txthinking/socks5 v0.0.0-20230325130024-4230056ae301/go.mod h1:ntmMHL/xPq1WLeKiw8p/eRATaae6PiVRNipHFJxI8PM=
 github.com/txthinking/socks5 v0.0.0-20260601051520-339b044ab0eb h1:cFSmrCbLJPb87QrwDhUTnguVLezlIqDiJuY8xKcFZnw=
 github.com/txthinking/socks5 v0.0.0-20260601051520-339b044ab0eb/go.mod h1:ntmMHL/xPq1WLeKiw8p/eRATaae6PiVRNipHFJxI8PM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

@@ -38,8 +38,22 @@ type Config struct {
 	// Headers is the HTTP headers that will be added to the request.
 	Headers http.Header
 
-	// ProxyURL is a URL of a proxy to use with this connection.
+	// ProxyURL is a URL of a proxy to use with this connection.  Proxy
+	// credentials are stored in its User field.
 	ProxyURL *url.URL
+
+	// ProxyNTLM enables NTLM authentication with the HTTP(S) proxy.
+	ProxyNTLM bool
+
+	// User is the user name for server authentication.  If empty, no
+	// authentication is used.
+	User string
+
+	// Password is the password for server authentication.
+	Password string
+
+	// NTLM enables NTLM authentication with the server instead of Basic.
+	NTLM bool
 
 	// ConnectTo is a mapping of "host1:port1" to "host2:port2" pairs that
 	// allows retargeting the connection.
@@ -227,6 +241,11 @@ func ParseConfig(args []string) (cfg *Config, err error) {
 		}
 	}
 
+	err = parseAuth(cfg, opts)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(opts.ConnectTo) > 0 {
 		cfg.ConnectTo, err = parseConnectTo(opts.ConnectTo)
 		if err != nil {
@@ -337,7 +356,80 @@ func ParseConfig(args []string) (cfg *Config, err error) {
 		}
 	}
 
+	if cfg.NTLM {
+		err = validateNTLM(cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return cfg, nil
+}
+
+// parseAuth parses and validates the server and proxy authentication options
+// and stores them in cfg.  cfg.ProxyURL must already be set.
+func parseAuth(cfg *Config, opts *Options) (err error) {
+	if opts.User != "" {
+		cfg.User, cfg.Password, _ = strings.Cut(opts.User, ":")
+		if cfg.User == "" {
+			return fmt.Errorf("invalid --user value: user name is empty")
+		}
+	}
+
+	cfg.NTLM = opts.NTLM
+	if cfg.NTLM && cfg.User == "" {
+		return fmt.Errorf("--ntlm requires --user")
+	}
+
+	if opts.ProxyUser != "" {
+		if cfg.ProxyURL == nil {
+			return fmt.Errorf("--proxy-user requires --proxy")
+		}
+
+		user, pass, _ := strings.Cut(opts.ProxyUser, ":")
+		if user == "" {
+			return fmt.Errorf("invalid --proxy-user value: user name is empty")
+		}
+
+		cfg.ProxyURL.User = url.UserPassword(user, pass)
+	}
+
+	cfg.ProxyNTLM = opts.ProxyNTLM
+	if !cfg.ProxyNTLM {
+		return nil
+	}
+
+	if cfg.ProxyURL == nil {
+		return fmt.Errorf("--proxy-ntlm requires --proxy")
+	}
+
+	if cfg.ProxyURL.Scheme != "http" && cfg.ProxyURL.Scheme != "https" {
+		return fmt.Errorf("--proxy-ntlm requires an HTTP or HTTPS proxy, got %s", cfg.ProxyURL.Scheme)
+	}
+
+	if cfg.ProxyURL.User == nil || cfg.ProxyURL.User.Username() == "" {
+		return fmt.Errorf("--proxy-ntlm requires proxy credentials: use --proxy-user or the proxy URL")
+	}
+
+	return nil
+}
+
+// validateNTLM checks that the server NTLM authentication is compatible with
+// other options and forces HTTP/1.1 since NTLM authenticates a connection, and
+// that does not work with HTTP/2 or HTTP/3.
+func validateNTLM(cfg *Config) (err error) {
+	switch {
+	case cfg.ForceHTTP2:
+		return fmt.Errorf("--ntlm cannot be used with --http2")
+	case cfg.ForceHTTP3:
+		return fmt.Errorf("--ntlm cannot be used with --http3")
+	case cfg.OHTTPGatewayURL != nil:
+		return fmt.Errorf("--ntlm cannot be used with OHTTP")
+	}
+
+	cfg.ForceHTTP11 = true
+
+	return nil
 }
 
 // getCipherSuiteByName tries to get the cipher suite by its name. Returns 0

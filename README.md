@@ -80,6 +80,12 @@ Use it the same way you use original curl.
 - `gocurl -I --http3 https://httpbin.agrd.workers.dev/head` force use HTTP/3.
 - `gocurl -x socks5://user:pass@host:port https://httpbin.agrd.workers.dev/get`
   use a proxy server.
+- `gocurl -u user:pass https://httpbin.agrd.workers.dev/basic-auth/user/pass`
+  use Basic authentication.
+- `gocurl --ntlm -u 'DOMAIN\user:pass' https://intranet.example.com/` use NTLM
+  authentication with the server (forces HTTP/1.1).
+- `gocurl -x http://proxy:3128 --proxy-ntlm -U 'DOMAIN\user:pass'
+  https://httpbin.agrd.workers.dev/get` use NTLM authentication with the proxy.
 - `gocurl -I --tlsv1.3 https://tls-v1-2.badssl.com:1012/` force use TLS v1.3.
 - `gocurl -I --connect-to "httpbin.agrd.workers.dev:443:172.67.152.85:443"
   https://httpbin.agrd.workers.dev/head` connect to the specified IP addresses.
@@ -395,6 +401,16 @@ Application Options:
                                                             multiple times.
   -x, --proxy=[protocol://username:password@]host[:port]    Use the specified proxy. The proxy string can be specified
                                                             with a protocol:// prefix.
+  -u, --user=<user:password>                                Server user and password. Basic authentication is used
+                                                            unless --ntlm is specified. For NTLM, the user can be
+                                                            specified as DOMAIN\user.
+      --ntlm                                                Use NTLM authentication with the server. Requires --user
+                                                            and implies --http1.1.
+  -U, --proxy-user=<user:password>                          Proxy user and password. Overrides the credentials in the
+                                                            --proxy URL. For NTLM, the user can be specified as
+                                                            DOMAIN\user.
+      --proxy-ntlm                                          Use NTLM authentication with the HTTP(S) proxy. Requires
+                                                            proxy credentials.
       --connect-to=<HOST1:PORT1:HOST2:PORT2>                For a request to the given HOST1:PORT1 pair, connect to
                                                             HOST2:PORT2 instead. Can be specified multiple times.
       --connect-timeout=<seconds>                           Maximum time in seconds allowed for the connection phase.

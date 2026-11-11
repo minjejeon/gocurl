@@ -33,6 +33,7 @@ func NewRequest(cfg *config.Config) (req *http.Request, err error) {
 
 	addHeaders(req, cfg)
 	addBodyHeaders(req, cfg)
+	addBasicAuth(req, cfg)
 
 	// Only set default User-Agent if it was not set by the user.
 	if req.Header.Get("User-Agent") == "" {
@@ -72,4 +73,15 @@ func addHeaders(req *http.Request, cfg *config.Config) {
 			req.Header.Add(k, v)
 		}
 	}
+}
+
+// addBasicAuth adds the Basic Authorization header if --user is specified
+// without --ntlm, unless the Authorization header is already set by the user.
+// NTLM authentication is handled by the transport, see ntlm.Transport.
+func addBasicAuth(req *http.Request, cfg *config.Config) {
+	if cfg.User == "" || cfg.NTLM || req.Header.Get("Authorization") != "" {
+		return
+	}
+
+	req.SetBasicAuth(cfg.User, cfg.Password)
 }

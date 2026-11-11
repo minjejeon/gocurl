@@ -3,6 +3,7 @@ package proxy
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/AdguardTeam/golibs/log"
 	"github.com/ameshkov/gocurl/internal/appversion"
+	"github.com/ameshkov/gocurl/internal/client/ntlm"
 	"golang.org/x/net/proxy"
 )
 
@@ -20,6 +22,9 @@ type httpProxyDialer struct {
 	forward        proxy.Dialer
 	tlsConfig      *tls.Config
 	connectTimeout time.Duration
+
+	// ntlm enables NTLM proxy authentication instead of Basic.
+	ntlm bool
 }
 
 // type check
@@ -66,39 +71,11 @@ func (d *httpProxyDialer) Dial(network, addr string) (net.Conn, error) {
 		proxyConn = tlsConn
 	}
 
-	// Send the CONNECT request
-	req := &http.Request{
-		Method: http.MethodConnect,
-		URL:    &url.URL{Opaque: addr},
-		Host:   addr,
-		Header: make(http.Header),
-	}
-
-	// Set User-Agent to gocurl.
-	req.Header.Set("User-Agent", fmt.Sprintf("gocurl/%s", appversion.Version()))
-
-	// Add proxy authentication if provided
-	if d.proxyURL.User != nil {
-		username := d.proxyURL.User.Username()
-		password, _ := d.proxyURL.User.Password()
-		req.SetBasicAuth(username, password)
-		req.Header.Set("Proxy-Authorization", req.Header.Get("Authorization"))
-	}
-
-	// Write the request to the proxy
-	if err = req.Write(proxyConn); err != nil {
-		log.OnCloserError(proxyConn, log.DEBUG)
-
-		return nil, fmt.Errorf("failed to write CONNECT request to proxy: %w", err)
-	}
-
-	// Read the response
-	r := bufio.NewReader(proxyConn)
-	resp, err := http.ReadResponse(r, req)
+	resp, err := d.connect(proxyConn, addr)
 	if err != nil {
 		log.OnCloserError(proxyConn, log.DEBUG)
 
-		return nil, fmt.Errorf("failed to read response from proxy: %w", err)
+		return nil, err
 	}
 	defer log.OnCloserError(resp.Body, log.DEBUG)
 
@@ -112,10 +89,94 @@ func (d *httpProxyDialer) Dial(network, addr string) (net.Conn, error) {
 	return proxyConn, nil
 }
 
+// connect sends the CONNECT request to the proxy, performing NTLM
+// authentication if it is enabled, and returns the final proxy response.
+func (d *httpProxyDialer) connect(proxyConn net.Conn, addr string) (resp *http.Response, err error) {
+	r := bufio.NewReader(proxyConn)
+
+	if !d.ntlm {
+		var auth string
+		if d.proxyURL.User != nil {
+			username := d.proxyURL.User.Username()
+			password, _ := d.proxyURL.User.Password()
+			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(username+":"+password))
+		}
+
+		return sendConnect(proxyConn, r, addr, auth)
+	}
+
+	negotiate, err := ntlm.NegotiateHeader()
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err = sendConnect(proxyConn, r, addr, negotiate)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusProxyAuthRequired {
+		return resp, nil
+	}
+
+	challenge, ok, err := ntlm.Challenge(resp.Header.Values("Proxy-Authenticate"))
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, fmt.Errorf("proxy did not send an NTLM challenge: %s", resp.Status)
+	}
+
+	// Read the response body completely to get to the next response.
+	ntlm.DrainBody(resp)
+	if resp.Close {
+		return nil, fmt.Errorf("proxy closed the connection during the NTLM handshake")
+	}
+
+	password, _ := d.proxyURL.User.Password()
+	authenticate, err := ntlm.AuthenticateHeader(challenge, d.proxyURL.User.Username(), password)
+	if err != nil {
+		return nil, err
+	}
+
+	return sendConnect(proxyConn, r, addr, authenticate)
+}
+
+// sendConnect writes the CONNECT request for addr to proxyConn and reads the
+// response from r.  If auth is not empty, it is sent in the
+// Proxy-Authorization header.
+func sendConnect(proxyConn net.Conn, r *bufio.Reader, addr, auth string) (resp *http.Response, err error) {
+	req := &http.Request{
+		Method: http.MethodConnect,
+		URL:    &url.URL{Opaque: addr},
+		Host:   addr,
+		Header: make(http.Header),
+	}
+
+	// Set User-Agent to gocurl.
+	req.Header.Set("User-Agent", fmt.Sprintf("gocurl/%s", appversion.Version()))
+
+	if auth != "" {
+		req.Header.Set("Proxy-Authorization", auth)
+	}
+
+	// Write the request to the proxy
+	if err = req.Write(proxyConn); err != nil {
+		return nil, fmt.Errorf("failed to write CONNECT request to proxy: %w", err)
+	}
+
+	resp, err = http.ReadResponse(r, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response from proxy: %w", err)
+	}
+
+	return resp, nil
+}
+
 // createHTTPProxyDialer creates a proxy.Dialer for HTTP or HTTPS proxies.
 // connectTimeout is the timeout for the connection phase. If 0, uses default timeout.
 func createHTTPProxyDialer(
 	proxyURL *url.URL,
+	ntlm bool,
 	forward proxy.Dialer,
 	connectTimeout time.Duration,
 ) (proxy.Dialer, error) {
@@ -142,5 +203,6 @@ func createHTTPProxyDialer(
 		forward:        forward,
 		tlsConfig:      tlsConfig,
 		connectTimeout: connectTimeout,
+		ntlm:           ntlm,
 	}, nil
 }

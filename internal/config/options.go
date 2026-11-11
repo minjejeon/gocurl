@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	goFlags "github.com/jessevdk/go-flags"
@@ -31,6 +32,19 @@ type Options struct {
 
 	// ProxyURL is a URL of a proxy to use with this connection.
 	ProxyURL string `short:"x" long:"proxy" description:"Use the specified proxy. The proxy string can be specified with a protocol:// prefix." value-name:"[protocol://username:password@]host[:port]"`
+
+	// User is the user name and password to use for server authentication.
+	User string `short:"u" long:"user" description:"Server user and password. Basic authentication is used unless --ntlm is specified. For NTLM, the user can be specified as DOMAIN\\user." value-name:"<user:password>"`
+
+	// NTLM enables NTLM authentication with the server.
+	NTLM bool `long:"ntlm" description:"Use NTLM authentication with the server. Requires --user and implies --http1.1." optional:"yes" optional-value:"true"`
+
+	// ProxyUser is the user name and password to use for proxy
+	// authentication.  Overrides the credentials specified in the proxy URL.
+	ProxyUser string `short:"U" long:"proxy-user" description:"Proxy user and password. Overrides the credentials in the --proxy URL. For NTLM, the user can be specified as DOMAIN\\user." value-name:"<user:password>"`
+
+	// ProxyNTLM enables NTLM authentication with the HTTP(S) proxy.
+	ProxyNTLM bool `long:"proxy-ntlm" description:"Use NTLM authentication with the HTTP(S) proxy. Requires proxy credentials." optional:"yes" optional-value:"true"`
 
 	// ConnectTo allows to override the connection target, i.e. for a request
 	// to the given HOST1:PORT1 pair, connect to HOST2:PORT2 instead.
@@ -138,9 +152,27 @@ type Options struct {
 
 // String implements fmt.Stringer interface for Options.
 func (o *Options) String() (s string) {
-	b, _ := json.MarshalIndent(o, "", "    ")
+	// Do not write credentials to the log.
+	redacted := *o
+	redacted.User = redactCredentials(o.User)
+	redacted.ProxyUser = redactCredentials(o.ProxyUser)
+	if u, err := url.Parse(o.ProxyURL); err == nil && u.User != nil {
+		redacted.ProxyURL = u.Redacted()
+	}
+
+	b, _ := json.MarshalIndent(&redacted, "", "    ")
 
 	return string(b)
+}
+
+// redactCredentials hides the password in the "user:password" string.
+func redactCredentials(userPass string) (s string) {
+	user, _, ok := strings.Cut(userPass, ":")
+	if !ok {
+		return userPass
+	}
+
+	return user + ":xxxxx"
 }
 
 // parseOptions parses the provided args and creates the Options struct.

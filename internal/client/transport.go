@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/ameshkov/gocurl/internal/client/ntlm"
 	"github.com/ameshkov/gocurl/internal/config"
 	"github.com/ameshkov/gocurl/internal/output"
 	"github.com/quic-go/quic-go/http3"
@@ -34,6 +35,18 @@ var _ Transport = (*transport)(nil)
 // Conn returns the last established connection using this transport.
 func (t *transport) Conn() (conn net.Conn) {
 	return t.d.conn
+}
+
+// CloseIdleConnections closes idle connections kept by the base transport.
+// Connections are only kept alive when NTLM authentication is used.
+func (t *transport) CloseIdleConnections() {
+	type closeIdler interface {
+		CloseIdleConnections()
+	}
+
+	if c, ok := t.base.(closeIdler); ok {
+		c.CloseIdleConnections()
+	}
 }
 
 // RoundTrip implements the http.RoundTripper interface for *transport.
@@ -79,6 +92,17 @@ func NewTransport(cfg *config.Config, out *output.Output) (rt Transport, err err
 		return nil, err
 	}
 
+	if cfg.NTLM {
+		out.Debug("Using NTLM authentication as user %s", cfg.User)
+
+		bt = &ntlm.Transport{
+			Base:     bt,
+			Out:      out,
+			Username: cfg.User,
+			Password: cfg.Password,
+		}
+	}
+
 	return &transport{d: d, base: bt}, nil
 }
 
@@ -97,7 +121,25 @@ func createHTTPTransport(
 		return createH2Transport(d)
 	}
 
+	if cfg.NTLM {
+		return createNTLMTransport(d), nil
+	}
+
 	return createH12Transport(d)
+}
+
+// createNTLMTransport creates an HTTP/1.1-only http.RoundTripper that keeps
+// the connection alive between requests.  This is required by NTLM as it
+// authenticates the connection and not the request.
+func createNTLMTransport(d *clientDialer) (rt http.RoundTripper) {
+	return &http.Transport{
+		DisableCompression: true,
+		MaxConnsPerHost:    1,
+		DialContext:        d.DialContext,
+		DialTLSContext:     d.DialTLSContext,
+		// Non-nil empty map disables HTTP/2.
+		TLSNextProto: map[string]func(string, *tls.Conn) http.RoundTripper{},
+	}
 }
 
 // createH3Transport creates an http.RoundTripper to be used in HTTP/3 client.

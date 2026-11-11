@@ -84,6 +84,11 @@ func runSingle(cfg *config.Config, out *output.Output) error {
 		return fmt.Errorf("failed to create HTTP transport: %w", err)
 	}
 
+	// Close the connections kept alive for NTLM authentication when done.
+	if c, ok := transport.(interface{ CloseIdleConnections() }); ok {
+		defer c.CloseIdleConnections()
+	}
+
 	req, err := client.NewRequest(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)

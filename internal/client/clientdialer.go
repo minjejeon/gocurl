@@ -146,7 +146,7 @@ func createDialFunc(
 
 	if cfg.ProxyURL != nil {
 		var proxyDialer dialer.Dialer
-		proxyDialer, err = proxy.NewProxyDialer(cfg.ProxyURL, dial, out, connectTimeout)
+		proxyDialer, err = proxy.NewProxyDialer(cfg.ProxyURL, cfg.ProxyNTLM, dial, out, connectTimeout)
 		if err != nil {
 			return nil, err
 		}
